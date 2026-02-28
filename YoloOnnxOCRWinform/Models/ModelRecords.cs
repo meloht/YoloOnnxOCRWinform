@@ -4,7 +4,9 @@ using System.Text;
 
 namespace YoloOnnxOCRWinform.Models
 {
+    
     public record ImagePreprocessModel(int imageHeight, int imageWidth, DataModel model, float[] Data, int TopPad, int LeftPad);
+    public record ShowResult(string path, string ocrResult,bool isOCR);
 
     public record LabelModel
     {

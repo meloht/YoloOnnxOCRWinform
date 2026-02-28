@@ -20,11 +20,12 @@ namespace YoloOnnxOCRWinform.YoloWarpper
         {
             yoloPredictor?.Dispose();
         }
-        protected string SaveImage(FileRowItem item, IYoloDetect yoloPredictor)
+        protected ShowResult SaveImage(FileRowItem item, IYoloDetect yoloPredictor)
         {
             using Mat inputImage = Cv2.ImRead(item.FilePath);
 
             var result = yoloPredictor.Run(inputImage);
+            var ocrResult = Utils.GetOCRResult(result, inputImage);
             yoloPredictor.DrawDetections(inputImage, result);
             string folder = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "temp");
             if (!Directory.Exists(folder))
@@ -37,7 +38,7 @@ namespace YoloOnnxOCRWinform.YoloWarpper
                 File.Delete(path);
             }
             Cv2.ImWrite(path, inputImage);
-            return path;
+            return new ShowResult(path, ocrResult.Item2, ocrResult.Item1);
         }
     }
 }

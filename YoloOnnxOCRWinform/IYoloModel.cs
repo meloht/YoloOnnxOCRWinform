@@ -8,7 +8,7 @@ namespace YoloOnnxOCRWinform
     public interface IYoloModel : IDisposable
     {
         void LoadModel(string modelPath, float confidence, float iou);
-        string SaveImage(FileRowItem item);
+        ShowResult SaveImage(FileRowItem item);
         string DetectImage(string imgPath);
     }
 }

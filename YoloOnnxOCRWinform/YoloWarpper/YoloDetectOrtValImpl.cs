@@ -40,7 +40,7 @@ namespace YoloOnnxOCRWinform.YoloWarpper
             yoloPredictor.Run(model);
         }
 
-        public string SaveImage(FileRowItem item)
+        public ShowResult SaveImage(FileRowItem item)
         {
             return SaveImage(item, yoloPredictor);
         }

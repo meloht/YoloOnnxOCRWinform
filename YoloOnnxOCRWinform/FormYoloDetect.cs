@@ -10,6 +10,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using YoloOnnxOCRWinform;
+using YoloOnnxOCRWinform.Models;
 
 
 namespace YoloOnnxWinform
@@ -188,10 +189,14 @@ namespace YoloOnnxWinform
                 var item = _viewPresenter.GetSelectRowData(row);
                 if (item != null)
                 {
-                    string path = _yoloPredictor.SaveImage(item);
-                    if (!string.IsNullOrEmpty(path))
+                    ShowResult showResult = _yoloPredictor.SaveImage(item);
+                    if (!string.IsNullOrEmpty(showResult.path))
                     {
-                        FormUtils.Show(item.FileName, path);
+                        FormUtils.Show(item.FileName, showResult.path);
+                    }
+                    if (showResult.isOCR)
+                    {
+                        FormUtils.ShowOCR(item.FileName, showResult.ocrResult);
                     }
                 }
             }
