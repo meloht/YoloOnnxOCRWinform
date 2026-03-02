@@ -9,11 +9,12 @@ namespace YoloOnnxOCRWinform.YoloWarpper
 {
     public class YoloDetectImplBase
     {
-        protected string DetectImage(string imgPath, IYoloDetect yoloPredictor)
+        protected DetectResult DetectImage(string imgPath, IYoloDetect yoloPredictor)
         {
             using Mat inputImage = Cv2.ImRead(imgPath);
             var data = yoloPredictor.Run(inputImage);
-            return Utils.GetResult(data);
+
+            return Utils.GetResult(data, inputImage);
         }
 
         protected void Dispose(IYoloDetect yoloPredictor)
@@ -38,7 +39,7 @@ namespace YoloOnnxOCRWinform.YoloWarpper
                 File.Delete(path);
             }
             Cv2.ImWrite(path, inputImage);
-            return new ShowResult(path, ocrResult.Item2, ocrResult.Item1);
+            return new ShowResult(path, ocrResult.ocrResult, ocrResult.isOCR);
         }
     }
 }

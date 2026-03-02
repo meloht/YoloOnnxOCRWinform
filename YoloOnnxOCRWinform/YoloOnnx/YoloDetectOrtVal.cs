@@ -217,8 +217,10 @@ namespace YoloOnnxOCRWinform.YoloOnnx
         public void Postprocess(ReadOnlySpan<float> ortTensor, ImagePreprocessModel imageData)
         {
             var list = Postprocess(imageData.imageHeight, imageData.imageWidth, ortTensor, imageData.TopPad, imageData.LeftPad);
-            imageData.model.DetectionResult = Utils.GetResult(list);
-
+            using Mat inputImage = Cv2.ImRead(imageData.imagePath);
+            var result = Utils.GetResult(list, inputImage);
+            imageData.model.DetectionResult = result.result;
+            imageData.model.DetectionText = result.ocr;
         }
 
         public void PreLoadImages(BindingList<DataModel> list, Dictionary<string, string> dict)

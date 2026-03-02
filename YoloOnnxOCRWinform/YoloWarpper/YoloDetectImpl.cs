@@ -11,7 +11,7 @@ namespace YoloOnnxOCRWinform.YoloWarpper
     {
         private YoloDetect yoloPredictor;
 
-        public string DetectImage(string imgPath)
+        public DetectResult DetectImage(string imgPath)
         {
             return DetectImage(imgPath, yoloPredictor);
         }

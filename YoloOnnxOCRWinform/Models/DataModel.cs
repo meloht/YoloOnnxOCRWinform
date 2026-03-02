@@ -16,6 +16,7 @@ namespace YoloOnnxOCRWinform.Models
 
         private string _fileName;
         private string _detectionResult;
+        private string _detectionText;
         private string _executeTime;
         private string _errorLog;
 
@@ -36,6 +37,16 @@ namespace YoloOnnxOCRWinform.Models
             {
                 _detectionResult = value;
                 OnPropertyChanged(nameof(DetectionResult));
+            }
+        }
+
+        public string DetectionText
+        {
+            get => _detectionText;
+            set
+            {
+                _detectionText = value;
+                OnPropertyChanged(nameof(DetectionText));
             }
         }
 

@@ -10,7 +10,7 @@ namespace YoloOnnxOCRWinform.YoloWarpper
     public class YoloDetectOrtValImpl : YoloDetectImplBase, IYoloModel, IYoloParallel
     {
         private YoloDetectOrtVal yoloPredictor;
-        public string DetectImage(string imgPath)
+        public DetectResult DetectImage(string imgPath)
         {
             return DetectImage(imgPath, yoloPredictor);
         }

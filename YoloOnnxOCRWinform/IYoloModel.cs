@@ -9,6 +9,6 @@ namespace YoloOnnxOCRWinform
     {
         void LoadModel(string modelPath, float confidence, float iou);
         ShowResult SaveImage(FileRowItem item);
-        string DetectImage(string imgPath);
+        DetectResult DetectImage(string imgPath);
     }
 }

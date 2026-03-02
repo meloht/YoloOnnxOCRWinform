@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Text;
+using YoloOnnxOCRWinform.Models;
 using YoloOnnxOCRWinform.YoloOnnx;
 
 namespace YoloOnnxOCRWinform
@@ -14,17 +15,21 @@ namespace YoloOnnxOCRWinform
     public class Utils
     {
         public const string TextClassName = "text";
-        public static string GetResult(List<Detection> list)
+        public static DetectResult GetResult(List<Detection> list, Mat inputImage)
         {
             if (list == null || list.Count == 0)
-                return string.Empty;
+                return new DetectResult(string.Empty, string.Empty);
 
             var dict = list.GroupBy(p => p.ClassName).Select(p => $"{p.Count()} {p.Key}").ToList();
             string confs = string.Join(", ", list.Select(p => Math.Round(p.Confidence, 2)));
-            return $"{string.Join(", ", dict)} [{confs}]";
+            string result = $"{string.Join(", ", dict)} [{confs}]";
+
+            var OCRResult = GetOCRResult(list, inputImage);
+
+            return new DetectResult(result, OCRResult.ocrResult);
         }
 
-        public static (bool, string) GetOCRResult(List<Detection> list, Mat inputImage)
+        public static OCRResult GetOCRResult(List<Detection> list, Mat inputImage)
         {
             StringBuilder sb = new StringBuilder();
 
@@ -56,7 +61,7 @@ namespace YoloOnnxOCRWinform
                     sb.AppendLine();
                 }
             }
-            return (isOCR, sb.ToString());
+            return new OCRResult(sb.ToString(), isOCR);
         }
 
 

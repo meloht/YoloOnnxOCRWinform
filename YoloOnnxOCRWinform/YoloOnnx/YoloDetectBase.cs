@@ -220,7 +220,7 @@ namespace YoloOnnxOCRWinform.YoloOnnx
                 }
             }
         }
-       
+
 
 
         protected (float[] OutData, int TopPad, int LeftPad) Preprocess(Mat inputImage)
@@ -243,7 +243,7 @@ namespace YoloOnnxOCRWinform.YoloOnnx
             return (data, top, left);
         }
 
-        protected ImagePreprocessModel PreprocessBatch(Mat inputImage, DataModel model)
+        protected ImagePreprocessModel PreprocessBatch(Mat inputImage, DataModel model, string imgPath)
         {
             // Letterbox处理
             (Mat paddedImg, int top, int left) = LetterboxFor1280(inputImage);
@@ -256,7 +256,7 @@ namespace YoloOnnxOCRWinform.YoloOnnx
                 GetChwArr(paddedImg, data);
 
                 // 添加批次维度 (1, 3, H, W)
-                return new ImagePreprocessModel(inputImage.Height, inputImage.Width, model, data, top, left);
+                return new ImagePreprocessModel(inputImage.Height, inputImage.Width, imgPath, model, data, top, left);
             }
 
         }
@@ -374,7 +374,7 @@ namespace YoloOnnxOCRWinform.YoloOnnx
             string imgPath = _dict[key];
 
             using Mat inputImage = Cv2.ImRead(imgPath);
-            var data = PreprocessBatch(inputImage, _listName[idx]);
+            var data = PreprocessBatch(inputImage, _listName[idx], imgPath);
             ImageListAdd(data);
         }
 
