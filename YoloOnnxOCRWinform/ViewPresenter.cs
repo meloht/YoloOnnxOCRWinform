@@ -159,11 +159,11 @@ namespace YoloOnnxOCRWinform
             model.ExecuteTime = $"{_stopwatch.Elapsed.TotalMilliseconds}ms";
             _stopwatch.Reset();
 
-            UpdateDetectResult(result.ocr, model.FileName, result.list, filePath);
+            UpdateDetectResult(result.ocr, model.FileName, result.list, filePath, result.IsOcr);
 
         }
 
-        private void UpdateDetectResult(string ocr, string fileName, List<Detection> list, string filePath)
+        private void UpdateDetectResult(string ocr, string fileName, List<Detection> list, string filePath, bool isOcr)
         {
             if (_dictResult.ContainsKey(filePath))
             {
@@ -174,6 +174,7 @@ namespace YoloOnnxOCRWinform
                     data.DetectionList = list;
                     data.FilePath = filePath;
                     data.FileName = fileName;
+                    data.IsOcr = isOcr;
                 }
             }
             else
@@ -183,6 +184,7 @@ namespace YoloOnnxOCRWinform
                 data.OCRResult = ocr;
                 data.FilePath = filePath;
                 data.FileName = fileName;
+                data.IsOcr = isOcr;
                 _dictResult.Add(filePath, data);
             }
         }
