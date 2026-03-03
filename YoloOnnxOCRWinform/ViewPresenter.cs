@@ -1,8 +1,12 @@
-﻿using System;
+﻿using Models;
+using Sdcb.PaddleOCR;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Text;
 using YoloOnnxOCRWinform.Models;
+using YoloOnnxOCRWinform.YoloOnnx;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace YoloOnnxOCRWinform
 {
@@ -12,6 +16,7 @@ namespace YoloOnnxOCRWinform
 
         protected BindingList<DataModel> _bindingSource = new BindingList<DataModel>();
         protected Dictionary<string, string> _dictFile = [];
+        private Dictionary<string, DetectResultModel> _dictResult = new Dictionary<string, DetectResultModel>();
         private System.Diagnostics.Stopwatch _stopwatch = new System.Diagnostics.Stopwatch();
 
 
@@ -25,6 +30,7 @@ namespace YoloOnnxOCRWinform
             _dictFile.Clear();
             _dictFile = dict;
             _bindingSource.Clear();
+            _dictResult.Clear();
             SetDataGridColumns();
             foreach (var fileName in files)
             {
@@ -64,39 +70,34 @@ namespace YoloOnnxOCRWinform
 
         }
 
-        public void Process(IYoloModel yoloPredictor, ExcuteType excuteType)
+        public void Process(IYoloModel yoloPredictor, ExcuteType excuteType, PaddleOcrAll paddleOcrAll)
         {
             if (yoloPredictor is IYoloParallel && ExcuteType.Parallel == excuteType)
             {
 
-                ProcessParallel(yoloPredictor);
+                ProcessParallel(yoloPredictor, paddleOcrAll);
             }
             else
             {
-                ProcessSequence(yoloPredictor);
+                ProcessSequence(yoloPredictor, paddleOcrAll);
             }
 
         }
 
-        private void ProcessSequence(IYoloModel yoloPredictor)
+        private void ProcessSequence(IYoloModel yoloPredictor, PaddleOcrAll paddleOcrAll)
         {
             int idx = 0;
             int total = _bindingSource.Count;
 
-            DateTime current = DateTime.Now;
+
             foreach (var item in _bindingSource)
             {
 
                 try
                 {
                     string filePath = _dictFile[item.FileName];
-                    GetDetectResult(yoloPredictor, item, filePath);
-                    var span = DateTime.Now - current;
-                    if (span.TotalMilliseconds > 100)
-                    {
-                        current = DateTime.Now;
-                        _formProgress.ShowProgress(idx * 100 / total, $"{idx}/{total}");
-                    }
+                    GetDetectResult(yoloPredictor, item, filePath, paddleOcrAll);
+                    _formProgress.ShowProgress(idx * 100 / total, $"{idx}/{total}");
 
                 }
                 catch (Exception ex)
@@ -110,7 +111,7 @@ namespace YoloOnnxOCRWinform
             _formProgress.ShowProgress(idx * 100 / total, $"{idx}/{total}");
         }
 
-        private void ProcessParallel(IYoloModel yoloPredictor)
+        private void ProcessParallel(IYoloModel yoloPredictor, PaddleOcrAll paddleOcrAll)
         {
             IYoloParallel yolo = (IYoloParallel)yoloPredictor;
             yolo.PreLoadImages(_bindingSource, _dictFile);
@@ -125,11 +126,13 @@ namespace YoloOnnxOCRWinform
                     try
                     {
                         _stopwatch.Start();
-                        yolo.Run(item1);
+                        DetectResultModel detectResult = yolo.Run(item1, paddleOcrAll);
 
                         _stopwatch.Stop();
                         item1.model.ExecuteTime = $"{_stopwatch.Elapsed.TotalMilliseconds}ms";
                         _stopwatch.Reset();
+
+                        UpdateDetectResult(detectResult);
 
                     }
                     catch (Exception ex)
@@ -146,24 +149,71 @@ namespace YoloOnnxOCRWinform
 
 
 
-        private void GetDetectResult(IYoloModel yoloPredictor, DataModel model, string filePath)
+        private void GetDetectResult(IYoloModel yoloPredictor, DataModel model, string filePath, PaddleOcrAll paddleOcrAll)
         {
             _stopwatch.Start();
-            var result = yoloPredictor.DetectImage(filePath);
+            var result = yoloPredictor.DetectImage(filePath, paddleOcrAll);
             model.DetectionResult = result.result;
             model.DetectionText = result.ocr;
             _stopwatch.Stop();
             model.ExecuteTime = $"{_stopwatch.Elapsed.TotalMilliseconds}ms";
             _stopwatch.Reset();
 
+            UpdateDetectResult(result.ocr, model.FileName, result.list, filePath);
+
         }
 
-        public FileRowItem GetSelectRowData(DataGridViewRow row)
+        private void UpdateDetectResult(string ocr, string fileName, List<Detection> list, string filePath)
+        {
+            if (_dictResult.ContainsKey(filePath))
+            {
+                var data = _dictResult[filePath];
+                if (data != null)
+                {
+                    data.OCRResult = ocr;
+                    data.DetectionList = list;
+                    data.FilePath = filePath;
+                    data.FileName = fileName;
+                }
+            }
+            else
+            {
+                DetectResultModel data = new DetectResultModel();
+                data.DetectionList = list;
+                data.OCRResult = ocr;
+                data.FilePath = filePath;
+                data.FileName = fileName;
+                _dictResult.Add(filePath, data);
+            }
+        }
+
+        private void UpdateDetectResult(DetectResultModel detectResult)
+        {
+            if (_dictResult.ContainsKey(detectResult.FilePath))
+            {
+                var data = _dictResult[detectResult.FilePath];
+                if (data != null)
+                {
+                    _dictResult[detectResult.FilePath] = detectResult;
+                }
+            }
+            else
+            {
+                _dictResult.Add(detectResult.FilePath, detectResult);
+            }
+        }
+
+        public DetectResultModel GetSelectRowData(DataGridViewRow row)
         {
             var item = row.DataBoundItem as DataModel;
             if (item != null)
             {
-                return new FileRowItem() { FileName = item.FileName, FilePath = _dictFile[item.FileName] };
+                string path = _dictFile[item.FileName];
+                if (_dictResult.ContainsKey(path))
+                {
+                    return _dictResult[path];
+
+                }
             }
             return null;
         }

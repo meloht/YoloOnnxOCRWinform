@@ -1,4 +1,6 @@
-﻿using System;
+﻿using Models;
+using Sdcb.PaddleOCR;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Text;
@@ -10,9 +12,9 @@ namespace YoloOnnxOCRWinform.YoloWarpper
     public class YoloDetectOrtValImpl : YoloDetectImplBase, IYoloModel, IYoloParallel
     {
         private YoloDetectOrtVal yoloPredictor;
-        public DetectResult DetectImage(string imgPath)
+        public DetectResult DetectImage(string imgPath, PaddleOcrAll paddleOcrAll)
         {
-            return DetectImage(imgPath, yoloPredictor);
+            return DetectImage(imgPath, yoloPredictor, paddleOcrAll);
         }
 
         public void Dispose()
@@ -35,12 +37,12 @@ namespace YoloOnnxOCRWinform.YoloWarpper
             yoloPredictor.PreLoadImages(list, dict);
         }
 
-        public void Run(ImagePreprocessModel model)
+        public DetectResultModel Run(ImagePreprocessModel model, PaddleOcrAll paddleOcrAll)
         {
-            yoloPredictor.Run(model);
+           return yoloPredictor.Run(model, paddleOcrAll);
         }
 
-        public ShowResult SaveImage(FileRowItem item)
+        public ShowResult SaveImage(DetectResultModel item)
         {
             return SaveImage(item, yoloPredictor);
         }
@@ -49,5 +51,7 @@ namespace YoloOnnxOCRWinform.YoloWarpper
         {
             yoloPredictor.EndPreload();
         }
+
+      
     }
 }

@@ -1,5 +1,8 @@
 ﻿using Microsoft.ML.OnnxRuntime;
 using OpenCvSharp;
+using Sdcb.PaddleInference;
+using Sdcb.PaddleOCR;
+using Sdcb.PaddleOCR.Models.Local;
 using System;
 using System.Buffers;
 using System.Collections.Generic;
@@ -26,10 +29,15 @@ namespace YoloOnnxOCRWinform.YoloOnnx
         protected Dictionary<string, string> _dict = new Dictionary<string, string>();
         private int _len = 0;
         int _idx = 0;
+
+        //protected PaddleOcrAll _paddleOcrAll;
+
         public YoloDetectBase()
         {
             _paddingColor = new Scalar(114, 114, 114);
-
+            //_paddleOcrAll = new PaddleOcrAll(LocalFullModels.EnglishV4, PaddleDevice.Mkldnn());
+            //_paddleOcrAll.AllowRotateDetection = false;
+            //_paddleOcrAll.Enable180Classification = false;
 
         }
 

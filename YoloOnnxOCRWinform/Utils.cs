@@ -15,31 +15,28 @@ namespace YoloOnnxOCRWinform
     public class Utils
     {
         public const string TextClassName = "text";
-        public static DetectResult GetResult(List<Detection> list, Mat inputImage)
+
+        public static DetectResult GetResult(List<Detection> list, Mat inputImage, PaddleOcrAll paddleOcrAll)
         {
             if (list == null || list.Count == 0)
-                return new DetectResult(string.Empty, string.Empty);
+                return new DetectResult(string.Empty, string.Empty, list, false);
 
             var dict = list.GroupBy(p => p.ClassName).Select(p => $"{p.Count()} {p.Key}").ToList();
             string confs = string.Join(", ", list.Select(p => Math.Round(p.Confidence, 2)));
             string result = $"{string.Join(", ", dict)} [{confs}]";
+            System.Diagnostics.Stopwatch sw = new System.Diagnostics.Stopwatch();
+            sw.Start();
+            var OCRResult = GetOCRResult(list, inputImage, paddleOcrAll);
+            sw.Stop();
 
-            var OCRResult = GetOCRResult(list, inputImage);
-
-            return new DetectResult(result, OCRResult.ocrResult);
+            System.Diagnostics.Debug.WriteLine($"GetOCRResult time: {sw.ElapsedMilliseconds} ms");
+            return new DetectResult(result, OCRResult.ocrResult, list, OCRResult.isOCR);
         }
 
-        public static OCRResult GetOCRResult(List<Detection> list, Mat inputImage)
+        public static OCRResult GetOCRResult(List<Detection> list, Mat inputImage, PaddleOcrAll paddleOcrAll)
         {
             StringBuilder sb = new StringBuilder();
 
-            FullOcrModel model = LocalFullModels.EnglishV4;
-
-            using PaddleOcrAll all = new PaddleOcrAll(model, PaddleDevice.Mkldnn())
-            {
-                AllowRotateDetection = false, /* 允许识别有角度的文字 */
-                Enable180Classification = false, /* 允许识别旋转角度大于90度的文字 */
-            };
             bool isOCR = false;
 
             foreach (var detection in list)
@@ -50,16 +47,16 @@ namespace YoloOnnxOCRWinform
                 }
                 isOCR = true;
                 // 4. 执行裁剪（SubMat：提取指定ROI区域，不会复制数据，效率高）
-                using (Mat croppedImage = inputImage.SubMat(detection.Box))
-                {
-                    PaddleOcrResult result = all.Run(croppedImage);
+                using Mat croppedImage = inputImage.SubMat(detection.Box);
 
-                    foreach (PaddleOcrResultRegion region in result.Regions)
-                    {
-                        sb.Append(region.Text).Append(" ");
-                    }
-                    sb.AppendLine();
+                PaddleOcrResult result = paddleOcrAll.Run(croppedImage);
+
+                foreach (PaddleOcrResultRegion region in result.Regions)
+                {
+                    sb.Append(region.Text).Append(" ");
                 }
+                sb.AppendLine();
+
             }
             return new OCRResult(sb.ToString(), isOCR);
         }

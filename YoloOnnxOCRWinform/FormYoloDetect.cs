@@ -1,5 +1,8 @@
 ﻿
 using CommImageControl;
+using Sdcb.PaddleInference;
+using Sdcb.PaddleOCR;
+using Sdcb.PaddleOCR.Models.Local;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -23,17 +26,23 @@ namespace YoloOnnxWinform
         private System.Diagnostics.Stopwatch _stopwatch = new System.Diagnostics.Stopwatch();
 
         private IYoloModel _yoloPredictor;
+        protected PaddleOcrAll _paddleOcrAll;
 
         public FormYoloDetect()
         {
             InitializeComponent();
             _viewPresenter = new ViewPresenter(this);
             _yoloPredictor = YoloFactory.Create(YoloWarpperType.YoloDetectOrt);
+            _paddleOcrAll = new PaddleOcrAll(LocalFullModels.EnglishV4, PaddleDevice.Mkldnn());
+            _paddleOcrAll.AllowRotateDetection = false;
+            _paddleOcrAll.Enable180Classification = false;
+
         }
 
         private void FormYoloDetect_Load(object sender, EventArgs e)
         {
             _yoloPredictor.LoadModel("white-dots.onnx", 0.25f, 0.4f);
+           
         }
 
         private void btnSelectDir_Click(object sender, EventArgs e)
@@ -86,7 +95,7 @@ namespace YoloOnnxWinform
         {
             Task.Run(() =>
             {
-                _viewPresenter.Process(_yoloPredictor, ExcuteType.Parallel);
+                _viewPresenter.Process(_yoloPredictor, ExcuteType.Sequence,_paddleOcrAll);
             });
         }
 
@@ -224,6 +233,10 @@ namespace YoloOnnxWinform
             if (_yoloPredictor != null)
             {
                 _yoloPredictor.Dispose();
+            }
+            if (_paddleOcrAll != null)
+            {
+                _paddleOcrAll.Dispose();
             }
         }
     }

@@ -1,7 +1,9 @@
 ﻿using Microsoft.ML.OnnxRuntime;
 using Microsoft.ML.OnnxRuntime.Tensors;
+using Models;
 using OpenCvSharp;
 using OpenCvSharp.Dnn;
+using Sdcb.PaddleOCR;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -20,6 +22,8 @@ namespace YoloOnnxOCRWinform.YoloOnnx
         private InferenceSession session;
         private SessionOptions _options;
         private bool disposedValue;
+
+
 
         public YoloDetect(string onnxModelPath, float confidenceThres, float iouThres)
         {
@@ -217,7 +221,7 @@ namespace YoloOnnxOCRWinform.YoloOnnx
             GC.SuppressFinalize(this);
         }
 
-        public void Run(ImagePreprocessModel model)
+        public DetectResultModel Run(ImagePreprocessModel model, PaddleOcrAll paddleOcrAll)
         {
             var inputMeta = session.InputMetadata.First().Value;
             var inputDims = inputMeta.Dimensions;
@@ -232,17 +236,25 @@ namespace YoloOnnxOCRWinform.YoloOnnx
             // 执行推理
             using var outputs = session.Run(inputs);
             Tensor<float> outputTensor = outputs[0].AsTensor<float>();
-            Postprocess(outputTensor, model);
+            return Postprocess(outputTensor, model, paddleOcrAll);
 
         }
 
-        public void Postprocess(Tensor<float> ortTensor, ImagePreprocessModel imageData)
+        public DetectResultModel Postprocess(Tensor<float> ortTensor, ImagePreprocessModel imageData, PaddleOcrAll paddleOcrAll)
         {
+            DetectResultModel detectResult = new DetectResultModel();
             var list = Postprocess(imageData.imageHeight, imageData.imageWidth, ortTensor, imageData.TopPad, imageData.LeftPad);
             using Mat inputImage = Cv2.ImRead(imageData.imagePath);
-            var result = Utils.GetResult(list, inputImage);
+            var result = Utils.GetResult(list, inputImage, paddleOcrAll);
             imageData.model.DetectionResult = result.result;
             imageData.model.DetectionText = result.ocr;
+
+            detectResult.DetectionList = list;
+            detectResult.OCRResult = result.ocr;
+            detectResult.FileName = imageData.model.FileName;
+            detectResult.FilePath = imageData.imagePath;
+            detectResult.IsOcr = result.IsOcr;
+            return detectResult;
         }
 
         public void PreLoadImages(BindingList<DataModel> list, Dictionary<string, string> dict)

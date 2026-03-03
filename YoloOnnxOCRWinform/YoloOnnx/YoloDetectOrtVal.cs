@@ -1,6 +1,8 @@
 ﻿using Microsoft.ML.OnnxRuntime;
+using Models;
 using OpenCvSharp;
 using OpenCvSharp.Dnn;
+using Sdcb.PaddleOCR;
 using System;
 using System.Buffers;
 using System.Collections.Generic;
@@ -177,18 +179,32 @@ namespace YoloOnnxOCRWinform.YoloOnnx
 
         public List<Detection> Run(Mat inputImage)
         {
+            System.Diagnostics.Stopwatch sw = new System.Diagnostics.Stopwatch();
+            System.Diagnostics.Debug.WriteLine($"===============================================================");
+            sw.Start();
             // 预处理图像
             var imgData = Preprocess(inputImage);
 
             using var inputOrtValue = OrtValue.CreateTensorValueFromMemory(imgData.OutData, InputShape);
 
+            sw.Stop();
+
+            System.Diagnostics.Debug.WriteLine($"Preprocess time: {sw.ElapsedMilliseconds} ms");
+            sw.Restart();
+
             using var runOptions = new RunOptions();
             // 执行推理
             using var outputs = _session.Run(runOptions, [InputName], [inputOrtValue], _session.OutputNames);
             using var output0 = outputs[0];
+            sw.Stop();
 
+            System.Diagnostics.Debug.WriteLine($"session.Run time: {sw.ElapsedMilliseconds} ms");
+            sw.Restart();
             // 后处理
             var result = Postprocess(inputImage.Height, inputImage.Width, output0.GetTensorDataAsSpan<float>(), imgData.TopPad, imgData.LeftPad);
+            sw.Stop();
+
+            System.Diagnostics.Debug.WriteLine($"Postprocess time: {sw.ElapsedMilliseconds} ms");
 
 
             return result;
@@ -199,10 +215,11 @@ namespace YoloOnnxOCRWinform.YoloOnnx
             StopLoad();
             _session.Dispose();
             _options.Dispose();
+
             GC.SuppressFinalize(this);
         }
 
-        public void Run(ImagePreprocessModel model)
+        public DetectResultModel Run(ImagePreprocessModel model, PaddleOcrAll paddleOcrAll)
         {
             using var inputOrtValue = OrtValue.CreateTensorValueFromMemory(model.Data, InputShape);
 
@@ -211,16 +228,24 @@ namespace YoloOnnxOCRWinform.YoloOnnx
             using var outputs = _session.Run(runOptions, [InputName], [inputOrtValue], _session.OutputNames);
             ArrayPool<float>.Shared.Return(model.Data);
             using var output0 = outputs[0];
-            Postprocess(output0.GetTensorDataAsSpan<float>(), model);
+            return Postprocess(output0.GetTensorDataAsSpan<float>(), model, paddleOcrAll);
         }
 
-        public void Postprocess(ReadOnlySpan<float> ortTensor, ImagePreprocessModel imageData)
+        public DetectResultModel Postprocess(ReadOnlySpan<float> ortTensor, ImagePreprocessModel imageData, PaddleOcrAll paddleOcrAll)
         {
+            DetectResultModel detectResult = new DetectResultModel();
             var list = Postprocess(imageData.imageHeight, imageData.imageWidth, ortTensor, imageData.TopPad, imageData.LeftPad);
             using Mat inputImage = Cv2.ImRead(imageData.imagePath);
-            var result = Utils.GetResult(list, inputImage);
+            var result = Utils.GetResult(list, inputImage, paddleOcrAll);
             imageData.model.DetectionResult = result.result;
             imageData.model.DetectionText = result.ocr;
+
+            detectResult.DetectionList = list;
+            detectResult.OCRResult = result.ocr;
+            detectResult.FileName = imageData.model.FileName;
+            detectResult.FilePath = imageData.imagePath;
+            detectResult.IsOcr = result.IsOcr;
+            return detectResult;
         }
 
         public void PreLoadImages(BindingList<DataModel> list, Dictionary<string, string> dict)

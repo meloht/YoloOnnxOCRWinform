@@ -1,8 +1,11 @@
-﻿using System;
+﻿using Models;
+using Sdcb.PaddleOCR;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Text;
 using YoloOnnxOCRWinform.Models;
+using YoloOnnxOCRWinform.YoloOnnx;
 
 namespace YoloOnnxOCRWinform
 {
@@ -12,7 +15,7 @@ namespace YoloOnnxOCRWinform
 
         ImagePreprocessModel[] GetPreLoadImages();
 
-        void Run(ImagePreprocessModel model);
+        DetectResultModel Run(ImagePreprocessModel model, PaddleOcrAll paddleOcrAll);
 
         void EndPreload();
     }

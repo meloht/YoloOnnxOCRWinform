@@ -1,4 +1,7 @@
-﻿using System;
+﻿using Sdcb.PaddleInference;
+using Sdcb.PaddleOCR;
+using Sdcb.PaddleOCR.Models.Local;
+using System;
 using System.Collections.Generic;
 using System.Text;
 using YoloOnnxOCRWinform.YoloWarpper;
@@ -12,7 +15,7 @@ namespace YoloOnnxOCRWinform
     }
     public static class YoloFactory
     {
-
+       
         public static IYoloModel Create(YoloWarpperType yoloWarpperType)
         {
             switch (yoloWarpperType)

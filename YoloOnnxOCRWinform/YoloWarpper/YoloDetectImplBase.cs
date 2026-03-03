@@ -1,4 +1,6 @@
-﻿using OpenCvSharp;
+﻿using Models;
+using OpenCvSharp;
+using Sdcb.PaddleOCR;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -9,25 +11,23 @@ namespace YoloOnnxOCRWinform.YoloWarpper
 {
     public class YoloDetectImplBase
     {
-        protected DetectResult DetectImage(string imgPath, IYoloDetect yoloPredictor)
+        protected DetectResult DetectImage(string imgPath, IYoloDetect yoloPredictor, PaddleOcrAll paddleOcrAll)
         {
             using Mat inputImage = Cv2.ImRead(imgPath);
             var data = yoloPredictor.Run(inputImage);
 
-            return Utils.GetResult(data, inputImage);
+            return Utils.GetResult(data, inputImage, paddleOcrAll);
         }
 
         protected void Dispose(IYoloDetect yoloPredictor)
         {
             yoloPredictor?.Dispose();
         }
-        protected ShowResult SaveImage(FileRowItem item, IYoloDetect yoloPredictor)
+        protected ShowResult SaveImage(DetectResultModel item, IYoloDetect yoloPredictor)
         {
             using Mat inputImage = Cv2.ImRead(item.FilePath);
 
-            var result = yoloPredictor.Run(inputImage);
-            var ocrResult = Utils.GetOCRResult(result, inputImage);
-            yoloPredictor.DrawDetections(inputImage, result);
+            yoloPredictor.DrawDetections(inputImage, item.DetectionList);
             string folder = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "temp");
             if (!Directory.Exists(folder))
             {
@@ -39,7 +39,7 @@ namespace YoloOnnxOCRWinform.YoloWarpper
                 File.Delete(path);
             }
             Cv2.ImWrite(path, inputImage);
-            return new ShowResult(path, ocrResult.ocrResult, ocrResult.isOCR);
+            return new ShowResult(path, item.OCRResult, item.IsOcr);
         }
     }
 }
